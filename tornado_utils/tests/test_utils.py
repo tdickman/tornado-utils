@@ -25,7 +25,7 @@ class UtilsTestCase(unittest.TestCase):
         p2 = encrypt_password('', log_rounds=1)
         self.assertNotEqual(p, p2)
 
-        self.assertTrue(isinstance(p, unicode))
+        self.assertTrue(isinstance(p, str))
         self.assertTrue('$bcrypt$' in p)
 
         # simulate what the User class's check_password does

@@ -1,5 +1,5 @@
-from urllib import urlencode
-import Cookie
+from urllib.parse import urlencode
+import http.cookies
 from tornado.httpclient import HTTPRequest
 from tornado import escape
 
@@ -24,8 +24,8 @@ class HTTPClientMixin(object):
     def post(self, url, data, headers=None, follow_redirects=False):
         if data is not None:
             if isinstance(data, dict):
-                for key, value in data.items():
-                    if isinstance(value, unicode):
+                for key, value in list(data.items()):
+                    if isinstance(value, str):
                         data[key] = value.encode('utf-8')
                 data = urlencode(data, True)
         return self._fetch(url, 'POST', data, headers,
@@ -42,12 +42,12 @@ class HTTPClientMixin(object):
 class TestClient(HTTPClientMixin):
     def __init__(self, testcase):
         self.testcase = testcase
-        self.cookies = Cookie.SimpleCookie()
+        self.cookies = http.cookies.SimpleCookie()
 
     def _render_cookie_back(self):
         return ''.join(['%s=%s;' %(x, morsel.value)
                         for (x, morsel)
-                        in self.cookies.items()])
+                        in list(self.cookies.items())])
 
     def get(self, url, data=None, headers=None, follow_redirects=False):
         if self.cookies:
@@ -74,9 +74,9 @@ class TestClient(HTTPClientMixin):
         try:
             sc = headers['Set-Cookie']
             cookies = escape.native_str(sc)
-            self.cookies.update(Cookie.SimpleCookie(cookies))
+            self.cookies.update(http.cookies.SimpleCookie(cookies))
             while True:
-                self.cookies.update(Cookie.SimpleCookie(cookies))
+                self.cookies.update(http.cookies.SimpleCookie(cookies))
                 if ',' not in cookies:
                     break
                 cookies = cookies[cookies.find(',') + 1:]

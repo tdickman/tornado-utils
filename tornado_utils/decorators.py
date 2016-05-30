@@ -1,10 +1,10 @@
-from urllib import quote as url_quote
+from urllib.parse import quote as url_quote
 from tornado.web import HTTPError
 import base64
 
 import functools
-import urllib
-import urlparse
+import urllib.request, urllib.parse, urllib.error
+import urllib.parse
 # taken from tornado.web.authenticated
 
 def authenticated_plus(extra_check):
@@ -16,12 +16,12 @@ def authenticated_plus(extra_check):
                 if self.request.method in ("GET", "HEAD"):
                     url = self.get_login_url()
                     if "?" not in url:
-                        if urlparse.urlsplit(url).scheme:
+                        if urllib.parse.urlsplit(url).scheme:
                             # if login url is absolute, make next absolute too
                             next_url = self.request.full_url()
                         else:
                             next_url = self.request.uri
-                        url += "?" + urllib.urlencode(dict(next=next_url))
+                        url += "?" + urllib.parse.urlencode(dict(next=next_url))
                     self.redirect(url)
                     return
                 raise HTTPError(403)

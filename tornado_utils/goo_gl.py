@@ -1,6 +1,6 @@
 import json
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
 import logging
 # http://code.google.com/apis/urlshortener/v1/getting_started.html
 # This works:
@@ -14,8 +14,8 @@ def shorten(url):
     #data = urllib.urlencode({'longUrl': url})
     data = json.dumps({'longUrl': url})
     headers = {'Content-Type': 'application/json'}
-    req = urllib2.Request(URL, data, headers)
-    response = urllib2.urlopen(req)
+    req = urllib.request.Request(URL, data, headers)
+    response = urllib.request.urlopen(req)
     the_page = response.read()
     logging.info("Shorten %r --> %s" % (url, the_page))
     struct = json.loads(the_page)
@@ -25,4 +25,4 @@ if __name__ == '__main__':
     import sys
     for url in sys.argv[1:]:
         if '://' in url:
-            print shorten(url)
+            print(shorten(url))

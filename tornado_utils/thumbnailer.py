@@ -6,8 +6,9 @@ import os
 
 from .utils import mkdir
 
-def get_thumbnail(save_path, image_data, (max_width, max_height),
+def get_thumbnail(save_path, image_data, xxx_todo_changeme,
                   quality=85, **kwargs):
+    (max_width, max_height) = xxx_todo_changeme
     if not Image:
         raise SystemError("PIL.Image was not imported")
 
@@ -66,9 +67,9 @@ def scale_and_crop(im, requested_size, **opts):
             ex, ey = dx / 2, dy / 2
             box = [ex, ey, x - ex, y - ey]
             # See if an edge cropping argument was provided.
-            edge_crop = (isinstance(crop, basestring) and
+            edge_crop = (isinstance(crop, str) and
                            re.match(r'(?:(-?)(\d+))?,(?:(-?)(\d+))?$', crop))
-            if edge_crop and filter(None, edge_crop.groups()):
+            if edge_crop and [_f for _f in edge_crop.groups() if _f]:
                 x_right, x_crop, y_bottom, y_crop = edge_crop.groups()
                 if x_crop:
                     offset = min(x * int(x_crop) / 100, dx)

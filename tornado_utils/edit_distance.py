@@ -1,5 +1,5 @@
 class EditDistance(object):
-    def __init__(self, against, alphabet=u'abcdefghijklmnopqrstuvwxyz'):
+    def __init__(self, against, alphabet='abcdefghijklmnopqrstuvwxyz'):
         self.against = against
         self.alphabet = alphabet
 

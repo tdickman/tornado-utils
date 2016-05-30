@@ -11,12 +11,12 @@ suitable for aggressive HTTP caching.
 __version__ = '1.9'
 
 import os
-import cPickle
+import pickle
 import re
 import stat
 import marshal
 import warnings
-from cStringIO import StringIO
+from io import StringIO
 from time import time
 from tempfile import gettempdir
 from base64 import encodestring
@@ -57,7 +57,7 @@ def _delete_old_static_name_conversion():
 
 def load_name_conversion():
     try:
-        return marshal.load(open(out_file))
+        return marshal.load(open(out_file, 'rb'))
     except IOError:
         return dict()
 
@@ -65,7 +65,7 @@ _delete_old_static_name_conversion()
 _name_conversion = load_name_conversion()
 
 def save_name_conversion():
-    marshal.dump(_name_conversion, open(out_file, 'w'))
+    marshal.dump(_name_conversion, open(out_file, 'wb'))
 
 class StaticURL(tornado.web.UIModule):
 
@@ -110,7 +110,7 @@ class StaticURL(tornado.web.UIModule):
             pass
 
         else:
-            destination = file(new_name, 'w')
+            destination = open(new_name, 'wb')
 
             if options.get('dont_optimize'):
                 do_optimize_static_content = False
@@ -127,10 +127,10 @@ class StaticURL(tornado.web.UIModule):
                   .settings.get('YUI_LOCATION')
 
             for full_path in full_paths:
-                code = open(full_path).read()
+                code = open(full_path, 'rb').read().decode('utf-8')
                 if full_path.endswith('.js'):
                     if len(full_paths) > 1:
-                        destination.write('/* %s */\n' % os.path.basename(full_path))
+                        destination.write('/* {} */\n'.format(os.path.basename(full_path)).encode('utf-8'))
                     if (do_optimize_static_content and
                         not self._already_optimized_filename(full_path)):
                         optimization_done = True
@@ -151,8 +151,7 @@ class StaticURL(tornado.web.UIModule):
 
                 elif full_path.endswith('.css'):
                     if len(full_paths) > 1:
-                        (destination.write('/* %s */\n' %
-                          os.path.basename(full_path)))
+                        destination.write('/* {} */\n'.format(os.path.basename(full_path)).encode('utf-8'))
                     if (do_optimize_static_content and
                         not self._already_optimized_filename(full_path)):
                         optimization_done = True
@@ -175,12 +174,12 @@ class StaticURL(tornado.web.UIModule):
                     # this just copies the file
                     pass
 
-                destination.write(code)
-                destination.write("\n")
+                destination.write(bytes(code, 'utf-8'))
+                destination.write(bytes("\n", 'utf-8'))
             destination.close()
 
         if return_inline:
-            return open(new_name).read()
+            return open(new_name, 'rb').read()
 
         prefix = self.handler.settings.get('combined_static_url_prefix', '/combined/')
         new_name = os.path.join(prefix, os.path.basename(new_name))
@@ -311,8 +310,8 @@ def run_closure_compiler(code, jar_location, verbose=False): # pragma: no cover
         t1 = time()
         a, b = len(code), len(r)
         c = round(100 * float(b) / a, 1)
-        print "Closure took", round(t1 - t0, 4),
-        print "seconds to compress %d bytes into %d (%s%%)" % (a, b, c)
+        print("Closure took", round(t1 - t0, 4), end=' ')
+        print("seconds to compress %d bytes into %d (%s%%)" % (a, b, c))
     return r
 
 def _run_closure_compiler(jscode, jar_location, advanced_optmization=False): # pragma: no cover
@@ -322,7 +321,7 @@ def _run_closure_compiler(jscode, jar_location, advanced_optmization=False): # p
     proc = Popen(cmd, shell=True, stdout=PIPE, stdin=PIPE, stderr=PIPE)
     try:
         (stdoutdata, stderrdata) = proc.communicate(jscode)
-    except OSError, msg:
+    except OSError as msg:
         # see comment on OSErrors inside _run_yui_compressor()
         stderrdata = \
           "OSError: %s. Try again by making a small change and reload" % msg
@@ -338,22 +337,22 @@ def run_uglify_js_compiler(code, location, verbose=False): # pragma: no cover
         t1 = time()
         a, b = len(code), len(r)
         c = round(100 * float(b) / a, 1)
-        print "UglifyJS took", round(t1 - t0, 4),
-        print "seconds to compress %d bytes into %d (%s%%)" % (a, b, c)
+        print("UglifyJS took", round(t1 - t0, 4), end=' ')
+        print("seconds to compress %d bytes into %d (%s%%)" % (a, b, c))
     return r
 
 def _run_uglify_js_compiler(jscode, location, options=''): # pragma: no cover
     cmd = "%s %s" % (location, options)
     proc = Popen(cmd, shell=True, stdout=PIPE, stdin=PIPE, stderr=PIPE)
     try:
-        (stdoutdata, stderrdata) = proc.communicate(jscode)
-    except OSError, msg:
+        (stdoutdata, stderrdata) = proc.communicate(jscode.encode('utf-8'))
+    except OSError as msg:
         # see comment on OSErrors inside _run_yui_compressor()
         stderrdata = \
           "OSError: %s. Try again by making a small change and reload" % msg
     if stderrdata:
-        return "/* ERRORS WHEN RUNNING UGLIFYJS COMPILER\n" + stderrdata + '\n*/\n' + jscode
-    return stdoutdata
+        return "/* ERRORS WHEN RUNNING UGLIFYJS COMPILER\n" + stderrdata.decode('utf-8') + '\n*/\n' + jscode
+    return stdoutdata.decode('utf-8')
 
 def run_yui_compressor(code, type_, jar_location, verbose=False): # pragma: no cover
     if verbose:
@@ -363,16 +362,16 @@ def run_yui_compressor(code, type_, jar_location, verbose=False): # pragma: no c
         t1 = time()
         a, b = len(code), len(r)
         c = round(100 * float(b) / a, 1)
-        print "YUI took", round(t1 - t0, 4),
-        print "seconds to compress %d bytes into %d (%s%%)" % (a, b, c)
+        print("YUI took", round(t1 - t0, 4), end=' ')
+        print("seconds to compress %d bytes into %d (%s%%)" % (a, b, c))
     return r
 
 def _run_yui_compressor(code, type_, jar_location):
     cmd = "java -jar %s --type=%s" % (jar_location, type_)
     proc = Popen(cmd, shell=True, stdout=PIPE, stdin=PIPE, stderr=PIPE)
     try:
-        (stdoutdata, stderrdata) = proc.communicate(code)
-    except OSError, msg:
+        (stdoutdata, stderrdata) = proc.communicate(code.encode('utf-8'))
+    except OSError as msg:
         # Sometimes, for unexplicable reasons, you get a Broken pipe when
         # running the popen instance. It's always non-deterministic problem
         # so it probably has something to do with concurrency or something
@@ -381,9 +380,9 @@ def _run_yui_compressor(code, type_, jar_location):
           "OSError: %s. Try again by making a small change and reload" % msg
 
     if stderrdata:
-        return "/* ERRORS WHEN RUNNING YUI COMPRESSOR\n" + stderrdata + '\n*/\n' + code
+        return "/* ERRORS WHEN RUNNING YUI COMPRESSOR\n" + stderrdata.decode('utf-8') + '\n*/\n' + code
 
-    return stdoutdata
+    return stdoutdata.decode('utf-8')
 
 
 class PlainStaticURL(tornado.web.UIModule):
@@ -418,7 +417,7 @@ class PlainStatic(tornado.web.UIModule):
 
 _base64_conversion_file = '.base64-image-conversions.pickle'
 try:
-    _base64_conversions = cPickle.load(file(_base64_conversion_file))
+    _base64_conversions = pickle.load(open(_base64_conversion_file, 'rb'))
     #raise IOError
 except IOError:
     _base64_conversions = {}
@@ -435,9 +434,9 @@ class Static64(tornado.web.UIModule):
         assert extension in ('gif','png'), extension
         full_path = os.path.join(
               self.handler.settings['static_path'], image_path)
-        data = encodestring(file(full_path,'rb').read()).replace('\n','')#.replace('\n','\\n')
+        data = encodestring(open(full_path,'rb').read()).replace('\n','')#.replace('\n','\\n')
         result = template % (extension, data)
 
         _base64_conversions[image_path] = result
-        cPickle.dump(_base64_conversions, file(_base64_conversion_file, 'wb'))
+        pickle.dump(_base64_conversions, open(_base64_conversion_file, 'wb'))
         return result

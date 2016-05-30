@@ -43,7 +43,7 @@ def encrypt_password(raw_password, log_rounds=10):
     salt = bcrypt.gensalt(log_rounds=log_rounds)
     hsh = bcrypt.hashpw(raw_password, salt)
     algo = 'bcrypt'
-    return u'%s$%s$%s' % (salt, algo, hsh)
+    return '%s$%s$%s' % (salt, algo, hsh)
 
 
 def niceboolean(value):
@@ -81,9 +81,9 @@ def mkdir(newdir):
             os.mkdir(newdir)
 
 from random import choice
-from string import letters
+from string import ascii_letters as letters
 def random_string(length):
-    return ''.join(choice(letters) for i in xrange(length))
+    return ''.join(choice(letters) for i in range(length))
 
 
 def all_hash_tags(tags, title):

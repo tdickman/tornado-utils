@@ -7,18 +7,18 @@ from email.MIMEText import MIMEText
 from email.MIMEBase import MIMEBase
 from email.MIMEMultipart import MIMEMultipart
 from email.Utils import formatdate
-from cStringIO import StringIO
+from io import StringIO
 
-from dns_name import DNS_NAME
-from importlib import import_module
+from .dns_name import DNS_NAME
+from .importlib import import_module
 
 class BadHeaderError(ValueError):
     pass
 
 def force_unicode(s, encoding):
-    if isinstance(s, unicode):
+    if isinstance(s, str):
         return s
-    return unicode(s, encoding)
+    return str(s, encoding)
 
 class Promise(object):pass
 def smart_str(s, encoding='utf-8', strings_only=False, errors='strict'):
@@ -27,11 +27,11 @@ def smart_str(s, encoding='utf-8', strings_only=False, errors='strict'):
 
     If strings_only is True, don't convert (some) non-string-like objects.
     """
-    if strings_only and isinstance(s, (types.NoneType, int)):
+    if strings_only and isinstance(s, (type(None), int)):
         return s
     if isinstance(s, Promise):
-        return unicode(s).encode(encoding, errors)
-    elif not isinstance(s, basestring):
+        return str(s).encode(encoding, errors)
+    elif not isinstance(s, str):
         try:
             return str(s)
         except UnicodeEncodeError:
@@ -41,8 +41,8 @@ def smart_str(s, encoding='utf-8', strings_only=False, errors='strict'):
                 # further exception.
                 return ' '.join([smart_str(arg, encoding, strings_only,
                         errors) for arg in s])
-            return unicode(s).encode(encoding, errors)
-    elif isinstance(s, unicode):
+            return str(s).encode(encoding, errors)
+    elif isinstance(s, str):
         return s.encode(encoding, errors)
     elif s and encoding != 'utf-8':
         return s.decode('utf-8', errors).encode(encoding, errors)
@@ -126,17 +126,17 @@ class EmailMessage(object):
         necessary encoding conversions.
         """
         if to:
-            assert not isinstance(to, basestring), '"to" argument must be a list or tuple'
+            assert not isinstance(to, str), '"to" argument must be a list or tuple'
             self.to = list(to)
         else:
             self.to = []
         if cc:
-            assert not isinstance(cc, basestring), '"cc" argument must be a list or tuple'
+            assert not isinstance(cc, str), '"cc" argument must be a list or tuple'
             self.cc = list(cc)
         else:
             self.cc = []
         if bcc:
-            assert not isinstance(bcc, basestring), '"bcc" argument must be a list or tuple'
+            assert not isinstance(bcc, str), '"bcc" argument must be a list or tuple'
             self.bcc = list(bcc)
         else:
             self.bcc = []
@@ -173,7 +173,7 @@ class EmailMessage(object):
             msg['Date'] = formatdate()
         if 'message-id' not in header_names:
             msg['Message-ID'] = make_msgid()
-        for name, value in self.extra_headers.items():
+        for name, value in list(self.extra_headers.items()):
             if name.lower() == 'from':  # From is already handled
                 continue
             msg[name] = value
@@ -371,7 +371,7 @@ def get_connection(backend, fail_silently=False, **kwds):
     try:
         mod_name, klass_name = path.rsplit('.', 1)
         mod = import_module(mod_name)
-    except ImportError, e:
+    except ImportError as e:
         raise
     klass = getattr(mod, klass_name)
     return klass(fail_silently=fail_silently, **kwds)

@@ -8,4 +8,4 @@ def truncate_words(s, num, end_text='...'):
         words = words[:length]
         if not words[-1].endswith(end_text):
             words.append(end_text)
-    return u' '.join(words)
+    return ' '.join(words)
